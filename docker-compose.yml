@@ -1,0 +1,59 @@
+version: "3.3"
+
+services:
+
+  traefik:
+    image: "traefik:v2.8"
+    container_name: "traefik"
+    command:
+      #- "--log.level=DEBUG"
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.prometheus.address=:9090"
+      - "--entrypoints.grafana.address=:3000"
+    ports:
+      - "80:80"
+      - "8080:8080"
+      - "9090:9090"
+      - "3000:3000"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    networks:
+      - fajnasiec
+
+  dupa:
+    build: ./studious-giggle
+    expose:
+      - 80
+    container_name: "dupa-papiez-service"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.twojastara.rule=HostRegexp(`{.+}`)"
+      - "traefik.http.routers.twojastara.entrypoints=web"
+    networks:
+      - fajnasiec
+  
+  prometheus:
+    build: ./prometheus
+    container_name: "prometheus-service"
+    networks:
+      - fajnasiec
+    labels:
+    - "traefik.enable=true"
+    - "traefik.http.routers.prom.rule=HostRegexp(`{.+}`)"
+    - "traefik.http.routers.prom.entrypoints=prometheus"
+  
+  grafana:
+    build: ./grafana
+    container_name: "grafana-service"
+    networks:
+      - fajnasiec
+    labels:
+    - "traefik.enable=true"
+    - "traefik.http.routers.graf.rule=HostRegexp(`{.+}`)"
+    - "traefik.http.routers.graf.entrypoints=grafana"
+
+networks:
+  fajnasiec:
